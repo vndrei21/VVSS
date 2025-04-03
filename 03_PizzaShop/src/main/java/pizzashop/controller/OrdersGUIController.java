@@ -9,9 +9,8 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Stage;
 import pizzashop.model.MenuDataModel;
-import pizzashop.gui.OrdersGUI;
 import pizzashop.service.PaymentAlert;
-import pizzashop.service.PizzaService;
+import pizzashop.service.PaymentService;
 
 import java.util.Calendar;
 import java.util.List;
@@ -50,21 +49,21 @@ public class OrdersGUIController {
         return totalAmount;
     }
     public void setTotalAmount(double totalAmount) {
-        this.totalAmount = totalAmount;
+        OrdersGUIController.totalAmount = totalAmount;
     }
 
-    private PizzaService service;
+    private PaymentService service;
     private int tableNumber;
 
-    public ObservableList<String> observableList;
-    private TableView<MenuDataModel> table = new TableView<MenuDataModel>();
-    private ObservableList<MenuDataModel> menuData;// = FXCollections.observableArrayList();
-    private Calendar now = Calendar.getInstance();
+    public  ObservableList<String> observableList;
+    private final TableView<MenuDataModel> table = new TableView<>();
+
+    private final Calendar now = Calendar.getInstance();
     private static double totalAmount;
 
     public OrdersGUIController(){ }
 
-    public void setService(PizzaService service, int tableNumber){
+    public void setService(PaymentService service, int tableNumber){
         this.service=service;
         this.tableNumber=tableNumber;
         initData();
@@ -72,6 +71,7 @@ public class OrdersGUIController {
     }
 
     private void initData(){
+        ObservableList<MenuDataModel> menuData;
         menuData = FXCollections.observableArrayList(service.getMenuData());
         menuData.setAll(service.getMenuData());
         orderTable.setItems(menuData);
@@ -83,13 +83,12 @@ public class OrdersGUIController {
                     .map(menuDataModel -> menuDataModel.getQuantity() +" "+ menuDataModel.getMenuItem())
                     .collect(Collectors.toList());
             observableList = FXCollections.observableList(orderList);
-            KitchenGUIController.order.add("Table" + tableNumber +" "+ orderList.toString());
+            KitchenGUIController.order.add("Table" + tableNumber +" "+ orderList);
             orderStatus.setText("Order placed at: " +  now.get(Calendar.HOUR)+":"+now.get(Calendar.MINUTE));
         });
 
         //Controller for Order Served Button
-        orderServed.setOnAction(event -> {orderStatus.setText("Served at: " + now.get(Calendar.HOUR)+":"+now.get(Calendar.MINUTE));
-        });
+        orderServed.setOnAction(event -> orderStatus.setText("Served at: " + now.get(Calendar.HOUR)+":"+now.get(Calendar.MINUTE)));
 
         //Controller for Pay Order Button
         payOrder.setOnAction(event -> {
@@ -104,7 +103,7 @@ public class OrdersGUIController {
             System.out.println("Total: " + getTotalAmount());
             System.out.println("--------------------------");
             PaymentAlert pay = new PaymentAlert(service);
-            pay.showPaymentAlert(tableNumber, this.getTotalAmount());
+            pay.showPaymentAlert(tableNumber, getTotalAmount());
         });
     }
 
@@ -120,12 +119,7 @@ public class OrdersGUIController {
                 new PropertyValueFactory<MenuDataModel, Integer>("quantity"));
 
         //bind pizzaTypeLabel and quantity combo box with the selection on the table view
-        orderTable.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<MenuDataModel>() {
-        @Override
-        public void changed(ObservableValue<? extends MenuDataModel> observable, MenuDataModel oldValue, MenuDataModel newValue) {
-           pizzaTypeLabel.textProperty().bind(newValue.menuItemProperty());
-              }
-        });
+        orderTable.getSelectionModel().selectedItemProperty().addListener((ChangeListener<MenuDataModel>) (observable, oldValue, newValue) -> pizzaTypeLabel.textProperty().bind(newValue.menuItemProperty()));
 
         //Populate Combo box for Quantity
         ObservableList<Integer> quantityValues =  FXCollections.observableArrayList(0, 1, 2,3,4,5);
@@ -133,15 +127,13 @@ public class OrdersGUIController {
         orderQuantity.setPromptText("Quantity");
 
         //Controller for Add to order Button
-        addToOrder.setOnAction(event -> {
-            orderTable.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<MenuDataModel>(){
-            @Override
-            public void changed(ObservableValue<? extends MenuDataModel> observable, MenuDataModel oldValue, MenuDataModel newValue){
-            oldValue.setQuantity(orderQuantity.getValue());
-            orderTable.getSelectionModel().selectedItemProperty().removeListener(this);
-                }
-            });
-        });
+        addToOrder.setOnAction(event -> orderTable.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<MenuDataModel>(){
+        @Override
+        public void changed(ObservableValue<? extends MenuDataModel> observable, MenuDataModel oldValue, MenuDataModel newValue){
+        oldValue.setQuantity(orderQuantity.getValue());
+        orderTable.getSelectionModel().selectedItemProperty().removeListener(this);
+            }
+        }));
 
         //Controller for Exit table Button
         newOrder.setOnAction(event -> {
