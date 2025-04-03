@@ -5,32 +5,45 @@ import pizzashop.model.Payment;
 import pizzashop.model.PaymentType;
 import pizzashop.repository.MenuRepository;
 import pizzashop.repository.PaymentRepository;
+import pizzashop.validator.PaymentValidator;
 
+import java.io.IOException;
 import java.util.List;
 
-public class PizzaService {
+public class PaymentService {
 
     private MenuRepository menuRepo;
     private PaymentRepository payRepo;
+    private PaymentValidator paymentValidator;
 
-    public PizzaService(MenuRepository menuRepo, PaymentRepository payRepo){
+    public PaymentService(MenuRepository menuRepo, PaymentRepository payRepo , PaymentValidator paymentValidator){
         this.menuRepo=menuRepo;
         this.payRepo=payRepo;
+        this.paymentValidator=paymentValidator;
     }
 
     public List<MenuDataModel> getMenuData(){return menuRepo.getMenu();}
 
     public List<Payment> getPayments(){return payRepo.getAll(); }
 
-    public void addPayment(int table, PaymentType type, double amount){
+    public void addPayment(int table, PaymentType type, double amount) throws IOException {
+        PaymentValidator.validate(table, type, amount);
         Payment payment= new Payment(table, type, amount);
         payRepo.add(payment);
     }
 
     public double getTotalAmount(PaymentType type){
+
+        return getTotalAmount(getPayments(),type);
+
+    }
+
+    public double getTotalAmount(List<Payment> l, PaymentType type){
         double total=0.0f;
-        List<Payment> l=getPayments();
-        if ((l==null) ||(l.isEmpty())) return total;
+        if (l==null)
+            return total;
+        if (l.isEmpty())
+            return total;
         for (Payment p:l){
             if (p.getType().equals(type))
                 total+=p.getAmount();

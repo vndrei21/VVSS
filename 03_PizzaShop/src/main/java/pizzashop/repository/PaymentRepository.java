@@ -8,22 +8,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
 
-public class PaymentRepository {
-    private static String filename = "data/payments.txt";
-    private List<Payment> paymentList;
+import static java.lang.System.*;
 
-    public PaymentRepository(){
+public class PaymentRepository {
+    private static final String FILE_NAME = "data/payments.txt";
+    private final List<Payment> paymentList;
+
+    public PaymentRepository() throws IOException {
         this.paymentList = new ArrayList<>();
         readPayments();
     }
 
-    private void readPayments(){
-        //ClassLoader classLoader = PaymentRepository.class.getClassLoader();
-        File file = new File(filename);
+    private void readPayments() throws IOException {
+        File file = new File(FILE_NAME);
         BufferedReader br = null;
         try {
             br = new BufferedReader(new FileReader(file));
-            String line = null;
+            String line;
             while((line=br.readLine())!=null){
                 Payment payment=getPayment(line);
                 paymentList.add(payment);
@@ -31,12 +32,15 @@ public class PaymentRepository {
             br.close();
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            assert br != null;
+            br.close();
         }
     }
 
     private Payment getPayment(String line){
-        Payment item=null;
-        if (line==null|| line.equals("")) return null;
+        Payment item;
+        if (line==null|| line.isEmpty()) return null;
         StringTokenizer st=new StringTokenizer(line, ",");
         int tableNumber= Integer.parseInt(st.nextToken());
         String type= st.nextToken();
@@ -45,7 +49,7 @@ public class PaymentRepository {
         return item;
     }
 
-    public void add(Payment payment){
+    public void add(Payment payment) throws IOException {
         paymentList.add(payment);
         writeAll();
     }
@@ -54,21 +58,23 @@ public class PaymentRepository {
         return paymentList;
     }
 
-    public void writeAll(){
-        //ClassLoader classLoader = PaymentRepository.class.getClassLoader();
-        File file = new File(filename);
+    public void writeAll() throws IOException {
+        File file = new File(FILE_NAME);
 
         BufferedWriter bw = null;
         try {
             bw = new BufferedWriter(new FileWriter(file));
             for (Payment p:paymentList) {
-                System.out.println(p.toString());
+                out.println(p.toString());
                 bw.write(p.toString());
                 bw.newLine();
             }
             bw.close();
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            assert bw != null;
+            bw.close();
         }
     }
 
